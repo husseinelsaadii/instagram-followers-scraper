@@ -1,0 +1,16 @@
+# Your Instagram login (sessionid / csrftoken) - never commit this
+config/settings.json
+
+# Scraped data
+output/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

@@ -1,0 +1,5 @@
+{
+  "sessionid": "YOUR_SESSION_ID",
+  "csrftoken": "",
+  "delay_seconds": [2.0, 5.0]
+}

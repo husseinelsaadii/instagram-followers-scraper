@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="description" content="Private localhost tool for exporting Instagram followers and following lists.">
+    <title>Instagram List Exporter</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Instagram List Exporter home">
+        <span class="brand-mark" aria-hidden="true">↗</span>
+        <span>List Exporter</span>
+      </a>
+      <div class="local-pill"><span></span> Private · localhost only</div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <p class="eyebrow">INSTAGRAM LIST EXPORTER</p>
+        <h1>Export followers<br>and following.</h1>
+        <p class="hero-copy">Enter your details, choose a list, and download a clean CSV or JSON file. Everything runs privately on your computer.</p>
+      </section>
+
+      <div class="workspace-grid">
+        <section class="card form-card" aria-labelledby="export-title">
+          <div class="card-heading">
+            <div>
+              <p class="step-label">NEW EXPORT</p>
+              <h2 id="export-title">Create an export</h2>
+            </div>
+            <button class="text-button" type="button" data-open-guide>How do I get these?</button>
+          </div>
+
+          <form id="export-form" autocomplete="off" novalidate>
+            <div class="section-block">
+              <div class="section-title">
+                <span>01</span>
+                <div>
+                  <h3>Instagram access</h3>
+                  <p>From the account currently signed in on instagram.com.</p>
+                </div>
+              </div>
+
+              <label class="field-label" for="sessionid">Session cookie <span>Required</span></label>
+              <div class="secret-field">
+                <input id="sessionid" name="sessionid" type="password" required spellcheck="false" autocomplete="off" placeholder="Paste the sessionid value">
+                <button type="button" class="reveal-button" data-toggle-secret="sessionid" aria-label="Show session cookie">Show</button>
+              </div>
+
+              <label class="field-label" for="csrftoken">CSRF token <span>Required</span></label>
+              <div class="secret-field">
+                <input id="csrftoken" name="csrftoken" type="password" required spellcheck="false" autocomplete="off" placeholder="Paste the csrftoken value">
+                <button type="button" class="reveal-button" data-toggle-secret="csrftoken" aria-label="Show CSRF token">Show</button>
+              </div>
+
+              <div class="privacy-note">
+                <span aria-hidden="true">⌁</span>
+                <p><strong>Kept on this computer.</strong> Credentials live in memory only while the export runs. They are not written to a file.</p>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section-block">
+              <div class="section-title">
+                <span>02</span>
+                <div>
+                  <h3>Target profile</h3>
+                  <p>Identify the Instagram account you want to export.</p>
+                </div>
+              </div>
+
+              <div class="two-columns">
+                <div>
+                  <label class="field-label" for="username">Username <span>Without @</span></label>
+                  <input id="username" name="username" type="text" required maxlength="31" spellcheck="false" autocomplete="off" placeholder="e.g. natgeo">
+                </div>
+                <div>
+                  <label class="field-label" for="user-id">Numeric profile ID <button type="button" class="inline-help" data-open-guide data-guide-section="profile-id">Find it</button></label>
+                  <input id="user-id" name="user_id" type="text" required inputmode="numeric" pattern="[0-9]+" maxlength="30" spellcheck="false" autocomplete="off" placeholder="e.g. 787132">
+                </div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section-block">
+              <div class="section-title">
+                <span>03</span>
+                <div>
+                  <h3>Choose what to export</h3>
+                  <p>Select a list and optionally cap its size.</p>
+                </div>
+              </div>
+
+              <fieldset class="choice-group">
+                <legend class="sr-only">List type</legend>
+                <label class="choice">
+                  <input type="radio" name="relationship" value="followers" checked>
+                  <span class="choice-content">
+                    <span class="choice-icon" aria-hidden="true">↓</span>
+                    <span><strong>Followers</strong><small>Accounts following this profile</small></span>
+                  </span>
+                </label>
+                <label class="choice">
+                  <input type="radio" name="relationship" value="following">
+                  <span class="choice-content">
+                    <span class="choice-icon" aria-hidden="true">→</span>
+                    <span><strong>Following</strong><small>Accounts this profile follows</small></span>
+                  </span>
+                </label>
+              </fieldset>
+
+              <label class="field-label" for="max-results">Maximum results <span>Leave blank for all</span></label>
+              <div class="number-field">
+                <input id="max-results" name="max_results" type="number" inputmode="numeric" min="1" max="100000" step="1" value="100">
+                <span>accounts</span>
+              </div>
+              <p class="field-hint">Start with 100. Large exports take longer and are more likely to be rate-limited by Instagram.</p>
+            </div>
+
+            <div id="form-error" class="alert error-alert" role="alert" hidden></div>
+            <button id="submit-button" class="primary-button" type="submit">
+              <span>Start export</span><span aria-hidden="true">↗</span>
+            </button>
+            <p class="terms-note">Use only for accounts and data you are authorized to access. Respect privacy and Instagram’s terms.</p>
+          </form>
+
+          <section id="progress-panel" class="progress-panel" aria-live="polite" hidden>
+            <div class="progress-topline">
+              <div>
+                <p class="step-label">LIVE EXPORT PROGRESS</p>
+                <div class="progress-title-row">
+                  <span id="progress-spinner" class="progress-spinner" aria-hidden="true"></span>
+                  <h3 id="progress-title">Connecting…</h3>
+                </div>
+              </div>
+              <div id="progress-percent" class="progress-percent">0%</div>
+            </div>
+
+            <div class="progress-summary">
+              <strong id="progress-count">0 / 100</strong>
+              <span id="progress-count-label">accounts collected</span>
+            </div>
+
+            <div id="progress-track" class="progress-track" role="progressbar" aria-label="Export progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div id="progress-bar" class="progress-bar"></div>
+            </div>
+
+            <div class="progress-meta">
+              <p id="progress-message" class="progress-message">Preparing your request…</p>
+              <p class="elapsed"><span aria-hidden="true">◷</span> <span id="elapsed-time">0:00</span> elapsed</p>
+            </div>
+
+            <div id="keep-open-note" class="keep-open-note">
+              <span aria-hidden="true">●</span>
+              <p><strong>Keep this page open.</strong> Large lists take time because requests are intentionally spaced out to reduce rate limits.</p>
+            </div>
+
+            <div id="result-actions" class="result-actions" hidden>
+              <a id="download-csv" class="primary-button download-button" href="#">Download CSV</a>
+              <a id="download-json" class="secondary-button" href="#">Download JSON</a>
+              <button id="new-export" class="text-button" type="button">Start another export</button>
+            </div>
+            <div id="job-warning" class="alert warning-alert" role="alert" hidden></div>
+          </section>
+        </section>
+
+        <aside class="side-column">
+          <section class="card quick-guide" aria-labelledby="quick-guide-title">
+            <p class="step-label">QUICK START</p>
+            <h2 id="quick-guide-title">What you’ll need</h2>
+            <ol>
+              <li><span>1</span><div><strong>A signed-in browser</strong><p>Log into instagram.com with an account that can see the target profile.</p></div></li>
+              <li><span>2</span><div><strong>Two cookie values</strong><p>Copy <code>sessionid</code> and <code>csrftoken</code> from DevTools.</p></div></li>
+              <li><span>3</span><div><strong>The numeric profile ID</strong><p>Find the number inside the followers or following network request.</p></div></li>
+            </ol>
+            <button class="secondary-button full-width" type="button" data-open-guide>Open the complete guide</button>
+          </section>
+
+          <section class="card quiet-card">
+            <span class="quiet-icon" aria-hidden="true">◌</span>
+            <div><strong>Gentle by design</strong><p>Requests are spaced out to reduce pressure on Instagram. Keep the app open until your files are ready.</p></div>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <footer><span>Instagram List Exporter</span><span>Runs privately at 127.0.0.1</span></footer>
+
+    <dialog id="guide-dialog" aria-labelledby="guide-title">
+      <div class="dialog-header">
+        <div>
+          <p class="step-label">SETUP GUIDE</p>
+          <h2 id="guide-title">Find your access details</h2>
+        </div>
+        <button id="close-guide" class="close-button" type="button" aria-label="Close guide">×</button>
+      </div>
+
+      <div class="dialog-body">
+        <section id="cookies-guide" class="guide-section">
+          <div class="guide-number">1</div>
+          <div>
+            <h3>Copy the session and CSRF cookies</h3>
+            <ol class="instruction-list">
+              <li>Open <strong>instagram.com</strong> in Chrome or Edge and sign in.</li>
+              <li>Open Developer Tools: right-click the page and choose <strong>Inspect</strong>. On Mac, you can press <kbd>⌘</kbd> + <kbd>⌥</kbd> + <kbd>I</kbd>; on Windows/Linux, press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd>.</li>
+              <li>Select the <strong>Application</strong> tab. If it is hidden, click the <strong>»</strong> menu first.</li>
+              <li>In the left sidebar, expand <strong>Storage → Cookies</strong>, then select <strong>https://www.instagram.com</strong>.</li>
+              <li>In the cookie table, find <code>sessionid</code>. Click its row and copy the full text in the <strong>Value</strong> column. Paste it into “Session cookie.”</li>
+              <li>Find <code>csrftoken</code> the same way and paste its value into “CSRF token.”</li>
+            </ol>
+            <div class="guide-callout"><strong>Keep these private.</strong> Anyone with your session cookie may be able to access your Instagram account. Never commit it to GitHub or send it to another person.</div>
+          </div>
+        </section>
+
+        <section id="profile-id-guide" class="guide-section">
+          <div class="guide-number">2</div>
+          <div>
+            <h3>Find the target profile’s numeric ID</h3>
+            <ol class="instruction-list">
+              <li>Keep Developer Tools open and select the <strong>Network</strong> tab.</li>
+              <li>Visit the target Instagram profile, then click its <strong>followers</strong> or <strong>following</strong> count.</li>
+              <li>In the Network filter, type <code>friendships</code>. Choose the request containing <code>/followers/</code> or <code>/following/</code>.</li>
+              <li>Under <strong>Headers → Request URL</strong>, look for a path like:<div class="url-example">/api/v1/friendships/<mark>787132</mark>/followers/</div></li>
+              <li>Copy only the number between <code>friendships/</code> and <code>/followers</code> (or <code>/following</code>). That is the numeric profile ID.</li>
+            </ol>
+            <p class="guide-tip"><strong>Nothing appeared?</strong> Clear the Network list, make sure recording is on, close the followers window, and open it again.</p>
+          </div>
+        </section>
+      </div>
+    </dialog>
+  </body>
+</html>
